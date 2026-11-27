@@ -12,35 +12,19 @@ fn main() {
                 }
             }
 
-            /*
-            let vowels = x
-                .chars()
-                .filter(|x| VOWELS.contains(*x))
-                .collect::<Vec<_>>()
-                .len();
-
+            let mut prev = None;
+            let mut vowels = 0;
             let mut repeat = false;
-            for i in 0..x.len() - 1 {
-                // Not UTF-8 safe?
-                if x.as_bytes()[i] == x.as_bytes()[i + 1] {
-                    repeat = true;
-                }
-            }
-            */
-
-            let mut ch = x.chars();
-            let mut prev = ch.next().unwrap();
-            let mut vowels = if VOWELS.contains(prev) { 1 } else { 0 };
-            let mut repeat = false;
-
-            for cur in ch {
+            for cur in x.chars() {
+                // Contains at least 3 vowels?
                 if VOWELS.contains(cur) {
                     vowels += 1;
                 }
-                if prev == cur {
+                // Has two identical characters in a row?
+                if prev == Some(cur) {
                     repeat = true;
                 }
-                prev = cur;
+                prev = Some(cur);
             }
 
             vowels >= 3 && repeat
@@ -54,34 +38,26 @@ fn main() {
         .lines()
         .map(|line| line.chars().collect::<Vec<_>>())
         .filter(|line| {
-            let mut pairs = HashMap::<(char, char), Vec<usize>>::new();
-
-            // Check non-overlapping pairs of characters
-            let mut has_pairs = false;
-            for i in 0..line.len() - 1 {
-                let pair = (line[i], line[i + 1]);
-                pairs
-                    .entry(pair)
-                    .and_modify(|x| {
-                        for j_idx in 0..x.len() {
-                            if (x[j_idx] as i32 - i as i32).abs() > 1 {
-                                x.push(i);
-                                // hmmmmm....
-                                has_pairs = true;
-                            }
-                        }
-                    })
-                    .or_insert(Vec::from([i]));
-            }
-
-            // Check for a letter repeating with one letter between the repeats
+            let mut pairs = HashMap::<(char, char), usize>::new();
             let mut repeat = false;
-            let mut i = 0;
-            while i < line.len() - 2 {
-                if line[i] == line[i + 2] {
+            let mut has_pairs = false;
+
+            for cur_idx in 0..line.len() - 1 {
+                // Check for a letter repeating with one letter between the repeats
+                if cur_idx < line.len() - 2 && line[cur_idx] == line[cur_idx + 2] {
                     repeat = true;
                 }
-                i += 1;
+
+                // Check non-overlapping pairs of characters
+                let pair = (line[cur_idx], line[cur_idx + 1]);
+                pairs
+                    .entry(pair)
+                    .and_modify(|pair_idx| {
+                        if pair_idx.abs_diff(cur_idx) > 1 {
+                            has_pairs = true;
+                        }
+                    })
+                    .or_insert(cur_idx);
             }
 
             repeat && has_pairs
